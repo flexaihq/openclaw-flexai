@@ -1,7 +1,7 @@
 {
   "name": "@flexai/openclaw-provider",
-  "version": "1.0.0",
-  "description": "FlexAI model provider plugin for OpenClaw: open-weight chat models through an OpenAI-compatible API.",
+  "version": "1.0.1",
+  "description": "FlexAI model provider for OpenClaw: open-weight chat and vision models with live discovery, plus image generation, speech, transcription, image understanding, embeddings and video generation.",
   "license": "MIT",
   "repository": {
     "type": "git",

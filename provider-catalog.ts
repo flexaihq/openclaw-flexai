@@ -32,6 +32,19 @@ const VISION_CATEGORY = "vision";
 // discovered row declares only the levels every validating route accepts.
 const DISCOVERED_REASONING_EFFORTS = ["low", "medium", "high"];
 
+// Llama 3.x calls a tool even when a turn needs none. Measured 2026-11-20 on
+// FlexAI staging: with two tools offered and the prompt "Reply with exactly:
+// PONG-FLEXAI", Llama-3.3-70B-Instruct-FP8 called `message` on 2 of 3 requests
+// and Meta-Llama-3.1-8B-Instruct-FP8 on 3 of 3, while Qwen3.5-9B answered. In
+// OpenClaw agent turns every one of 10 runs made tool calls (up to 18) and
+// several returned a wrong answer. These rows are offered no tools, so they
+// serve plain chat; FlexAI's `tool_use` flag does not override this.
+const UNPROMPTED_TOOL_CALLERS = /(^|[/-])llama-3(\.\d+)?-/i;
+
+function offersTools(id: string, supports: readonly string[]): boolean {
+  return supports.includes(TOOL_CAPABILITY) && !UNPROMPTED_TOOL_CALLERS.test(id);
+}
+
 function readStringList(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === "string")
@@ -113,7 +126,7 @@ function projectFlexAIModels(
       },
       compat: {
         ...seed?.compat,
-        supportsTools: supports.includes(TOOL_CAPABILITY),
+        supportsTools: offersTools(id, supports),
         ...(reasoning && !seededEfforts
           ? { supportedReasoningEfforts: DISCOVERED_REASONING_EFFORTS }
           : {}),
