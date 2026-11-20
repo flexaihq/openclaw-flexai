@@ -1,0 +1,43 @@
+{
+  "name": "@flexai/openclaw-provider",
+  "version": "1.0.0",
+  "description": "FlexAI model provider plugin for OpenClaw: open-weight chat models through an OpenAI-compatible API.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flexaihq/openclaw-flexai"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "assets",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.11.6"
+  },
+  "devDependencies": {
+    "openclaw": "2026.11.6",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.11.6"
+    },
+    "build": {
+      "openclawVersion": "2026.11.6",
+      "pluginSdkVersion": "2026.11.6"
+    }
+  }
+}
