@@ -139,7 +139,7 @@ refreshes them.
 | `flexai/Qwen3-Coder-30B-A3B-Instruct-FP8` | 256K | no | no | $0.07 / $0.28 |  |
 | `flexai/Qwen3.5-9B` | 256K | yes | yes | $0.1 / $0.15 |  |
 | `flexai/Qwen3.6-27B-FP8` | 256K | yes | yes | $0.25 / $2 |  |
-| `flexai/Qwen3.6-35B-A3B-FP8` | 256K | yes | yes | $0.1 / $0.95 | Default |
+| `flexai/Qwen3.6-35B-A3B-FP8` | 256K | yes | yes | $0.1 / $0.95 |  |
 | `flexai/Qwen3.8-27B` | 256K | yes | yes | $0.2 / $2.5 | Effort: low/medium/high |
 | `flexai/Qwen3.8-Flash-Next` | 256K | yes | yes | $0.15 / $0.47 | Effort: low/medium/high |
 
@@ -303,7 +303,10 @@ Most setups only need the API key. Use explicit `models.providers.flexai` config
   env: { vars: { FLEXAI_API_KEY: "..." } },
   agents: {
     defaults: {
-      model: { primary: "flexai/Qwen3.6-35B-A3B-FP8" },
+      model: {
+        primary: "flexai/DeepSeek-V4.1-Flash-1017",
+        fallbacks: ["flexai/GLM-5.3-Flash"],
+      },
     },
   },
   models: {
