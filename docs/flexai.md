@@ -11,7 +11,6 @@
 | Direct CLI flag | `--flexai-api-key <key>`                     |
 | API             | OpenAI-compatible (`openai-completions`)     |
 | Base URL        | `https://api.flex.ai/v1`                     |
-| Default model   | `flexai/Qwen3.6-35B-A3B-FP8`                 |
 
 ## Install plugin
 
