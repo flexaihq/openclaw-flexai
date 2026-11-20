@@ -17,6 +17,12 @@
     "index.ts",
     "api.ts",
     "provider-catalog.ts",
+    "media-models.ts",
+    "image-generation-provider.ts",
+    "speech-provider.ts",
+    "media-understanding-provider.ts",
+    "embedding-adapter.ts",
+    "video-generation-provider.ts",
     "types/*.d.ts"
   ]
 }

@@ -4,7 +4,7 @@
     "models"
   ],
   "name": "FlexAI",
-  "description": "FlexAI model provider: open-weight chat models through an OpenAI-compatible API, with live model discovery.",
+  "description": "FlexAI model provider: open-weight chat models with live discovery, plus image generation, speech, transcription, image understanding, embeddings and video generation.",
   "activation": {
     "onStartup": false
   },
@@ -45,6 +45,39 @@
       "cliDescription": "FlexAI API key"
     }
   ],
+  "contracts": {
+    "mediaUnderstandingProviders": [
+      "flexai"
+    ],
+    "embeddingProviders": [
+      "flexai"
+    ],
+    "imageGenerationProviders": [
+      "flexai"
+    ],
+    "speechProviders": [
+      "flexai"
+    ],
+    "videoGenerationProviders": [
+      "flexai"
+    ]
+  },
+  "mediaUnderstandingProviderMetadata": {
+    "flexai": {
+      "capabilities": [
+        "image",
+        "audio"
+      ],
+      "defaultModels": {
+        "image": "gemma-4-26B-A4B-it",
+        "audio": "whisper-large-v3-turbo"
+      },
+      "autoPriority": {
+        "image": 45,
+        "audio": 45
+      }
+    }
+  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -415,6 +448,26 @@
             },
             "compat": {
               "supportsTools": true
+            }
+          },
+          {
+            "id": "PaddleOCR-VL",
+            "name": "PaddleOCR-VL 0.9B",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "contextWindow": 131072,
+            "maxTokens": 131072,
+            "cost": {
+              "input": 0.14,
+              "output": 0.8,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "compat": {
+              "supportsTools": false
             }
           },
           {

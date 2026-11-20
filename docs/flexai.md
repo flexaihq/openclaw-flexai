@@ -1,6 +1,6 @@
 # FlexAI provider
 
-[FlexAI](https://flex.ai) serves open-weight models through an OpenAI-compatible API. The plugin discovers the live catalog and its prices, with a bundled catalog for offline fallback.
+[FlexAI](https://flex.ai) serves open-weight models through an OpenAI-compatible API. The plugin discovers the live chat catalog and its prices, with a bundled catalog for offline fallback, and also registers FlexAI's image generation, speech, transcription, image understanding, embedding and video generation models. See [Beyond chat](#beyond-chat).
 
 | Property        | Value                                        |
 | --------------- | -------------------------------------------- |
@@ -76,9 +76,14 @@ working when an alias changes.
 ## Discovery and pricing
 
 When FlexAI auth is configured, OpenClaw reads `GET /v1/models` through the
-configured base URL and projects the chat-capable rows into the catalog. The
-same endpoint also lists embedding, transcription, speech, image-generation and
-OCR models; those are not selectable as chat models and are filtered out.
+configured base URL and projects the chat-capable rows into the catalog, plus
+`PaddleOCR-VL`, a vision row that takes image input and answers in text without
+declaring `chat`. The same endpoint also lists embedding, transcription, speech,
+image-generation, video-generation, reranking and moderation models; those are
+not selectable as chat models and are filtered out of the chat catalog. The
+embedding, speech, transcription, image-generation and video-generation models
+are served through their own OpenClaw capabilities (see
+[Beyond chat](#beyond-chat)). Reranking and moderation models are not exposed.
 
 Live rows supply the context window, prompt/completion/cached-prompt prices, and
 image-input support. FlexAI returns prices as USD per-token strings alongside
@@ -107,7 +112,7 @@ than inventing a ceiling the API does not impose.
 
 ## Bundled catalog
 
-23 offline fallback chat models. Context windows, prices, tool support, reasoning
+24 offline fallback chat models. Context windows, prices, tool support, reasoning
 and image-input flags come from the FlexAI `GET /v1/models` listing. Prices are
 USD per million tokens; the listing is the source of truth and live discovery
 refreshes them.
@@ -130,6 +135,7 @@ refreshes them.
 | `flexai/Mistral-Nemo-Instruct-2407-FP8` | 128K | no | no | $0.023 / $0.03 |  |
 | `flexai/Muse-Glimmer-30B` | 128K | yes | yes | $0.35 / $1.5 |  |
 | `flexai/NVIDIA-Nemotron-3.5-Lightning-30B-A3B` | 1M | yes | no | $0.06 / $0.16 |  |
+| `flexai/PaddleOCR-VL` | 128K | no | yes | $0.14 / $0.8 | OCR model, no tools; see [PaddleOCR-VL](#paddleocr-vl) |
 | `flexai/Qwen3-30B-A3B-Thinking-2507-FP8` | 256K | yes | no | $0.2 / $2.4 |  |
 | `flexai/Qwen3-Coder-30B-A3B-Instruct-FP8` | 256K | no | no | $0.07 / $0.28 |  |
 | `flexai/Qwen3.5-9B` | 256K | yes | yes | $0.1 / $0.15 |  |
@@ -156,6 +162,138 @@ field on the assistant message.
 Forcing a specific function with `tool_choice: {"type": "function", ...}` is
 honored per model. As of 2026-10-02, `gemma-4-31b-it` declined, and FlexAI
 returned `400` naming the model rather than silently answering without the call.
+
+## Beyond chat
+
+The plugin registers these capabilities next to the chat provider, all under
+provider id `flexai` and the same API key. Model ids are the canonical ids
+`GET /v1/models` reports. Prices are from the listing and are not applied to
+OpenClaw's cost estimates for media calls.
+
+| Capability | Model | FlexAI endpoint | Listing price |
+| --- | --- | --- | --- |
+| Image generation | `FLUX.1-schnell` | `POST /v1/images/generations` | $0.0005 per image |
+| Speech (TTS) | `Kokoro-82M` | `POST /v1/audio/speech` | $0.99 per 1M characters |
+| Audio transcription | `whisper-large-v3-turbo` | `POST /v1/audio/transcriptions` | $0.0002 per audio minute |
+| Audio transcription | `parakeet-tdt-0.6b-v3` | `POST /v1/audio/transcriptions` | $0.001 per audio minute |
+| Image understanding | vision chat rows | `POST /v1/chat/completions` | chat price |
+| Embeddings | `bge-m3` | `POST /v1/embeddings` | $0.01 per 1M tokens |
+| Video generation | `MiniMax-H3` | `POST /v1/videos/generations` | $0.08 per video second |
+
+Each one runs from the command line as well as from agents:
+
+```bash
+openclaw infer image generate --model flexai/FLUX.1-schnell --prompt "a red apple" --size 1024x1024
+openclaw infer tts convert --provider flexai --model flexai/Kokoro-82M --text "Hello" --output hello.wav
+openclaw infer audio transcribe --file hello.wav
+openclaw infer image describe --file photo.png
+openclaw infer embedding create --provider flexai --model flexai/bge-m3 --text "hello"
+openclaw infer video generate --model flexai/MiniMax-H3 --prompt "a paper boat on a pond" --size 768x768
+```
+
+Select FlexAI as the default for a capability in your config:
+
+```json5
+{
+  agents: {
+    defaults: {
+      mediaModels: {
+        image: { primary: "flexai/FLUX.1-schnell" },
+        video: { primary: "flexai/MiniMax-H3", timeoutMs: 600000 },
+      },
+    },
+  },
+  tts: { provider: "flexai" },
+  memory: { search: { provider: "flexai", model: "bge-m3" } },
+}
+```
+
+### Image generation
+
+`FLUX.1-schnell` generates one image per request (FlexAI rejects `n > 1`) and
+accepts any `WxH` with each side from 64 to 2048; the plugin offers `512x512`,
+`768x768`, `1024x1024`, `1024x768` and `768x1024` and defaults to `1024x1024`.
+Image editing is not supported and is declared as disabled.
+
+### Speech
+
+`Kokoro-82M` returns `wav` only: FlexAI answers `400` to `mp3`, `opus`, `flac`
+and `pcm`, so the plugin accepts only `wav` as a response format and marks the
+output as not voice-note compatible. Voices are the Kokoro voices (`af_heart`,
+the default, plus `af_bella`, `af_sky`, `am_adam`, `am_michael`) and the OpenAI
+aliases (`alloy`, `echo`, `fable`, `nova`, `onyx`, `shimmer`). FlexAI rejects an
+unknown voice with a `400` naming the accepted forms.
+
+### Audio transcription
+
+`whisper-large-v3-turbo` is the default for audio files. To use
+`parakeet-tdt-0.6b-v3` (English), list it as the audio model:
+
+```json5
+{
+  tools: {
+    media: {
+      models: [{ provider: "flexai", model: "parakeet-tdt-0.6b-v3", capabilities: ["audio"] }],
+    },
+  },
+}
+```
+
+### Embeddings
+
+`bge-m3` returns 1024-dimension vectors with an 8K-token context and backs
+`memory.search` when `provider` is `flexai`.
+
+### Video generation
+
+`MiniMax-H3` is text-to-video. FlexAI runs it as an asynchronous job: the plugin
+submits `POST /v1/videos/generations`, polls `GET /v1/videos/generations/{id}`,
+and the completed job carries the clip inline as base64. A clip takes roughly
+30 to 60 seconds. `size` maps to `width` and `height` (`768x768` is the size
+offered; omit it to use FlexAI's default). FlexAI accepts no duration, aspect
+ratio or resolution parameter on this route, so those hints are ignored.
+FlexAI hands each completed clip out once: reading a finished job a second time
+answers `410 job_already_retrieved`, so a failed download cannot be retried. The
+response is read under OpenClaw's 16 MiB JSON limit. Image-to-video is not
+enabled.
+
+## Vision
+
+Image input is declared from the listing's `input_modalities` and checked with a
+real request carrying an `image_url` content part. These rows accept images and
+read a test image back correctly:
+
+| Model ref | Notes |
+| --- | --- |
+| `flexai/DeepSeek-V4.1-Flash-1017` | |
+| `flexai/gemma-4-26B-A4B-it` | Default for image understanding |
+| `flexai/gemma-4-31b-it` | |
+| `flexai/GLM-5.3-Flash` | |
+| `flexai/MiMo-V2.6-Flash-RL` | |
+| `flexai/MiniMax-M3.1-Flash` | |
+| `flexai/Muse-Glimmer-30B` | |
+| `flexai/Qwen3.5-9B` | |
+| `flexai/Qwen3.6-27B-FP8` | |
+| `flexai/Qwen3.6-35B-A3B-FP8` | |
+| `flexai/Qwen3.8-27B` | |
+| `flexai/Qwen3.8-Flash-Next` | |
+| `flexai/PaddleOCR-VL` | OCR model, see below |
+
+Two ways to use them: attach an image to an agent turn on one of these models,
+or run `openclaw infer image describe --file <path> [--model flexai/<id>]`, which
+sends the image to the default vision model (or the one you name) and returns
+its description. Listed models that also declare audio or video input
+(`MiMo-V2.6-Flash-RL`, `MiniMax-M3.1-Flash`) are declared here for image input
+only.
+
+### PaddleOCR-VL
+
+`PaddleOCR-VL` is a 0.9B document OCR model. It accepts image input through chat
+completions and returns the text it reads, so it is declared as a chat row with
+image input and no tool support. Use it for OCR through
+`openclaw infer image describe --model flexai/PaddleOCR-VL`. It is not a general
+agent model: in a full agent turn, with OpenClaw's long system prompt, it did not
+produce a usable answer.
 
 ## Manual config
 

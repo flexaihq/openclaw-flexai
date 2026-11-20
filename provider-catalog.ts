@@ -21,6 +21,8 @@ const TOOL_CAPABILITY = "tool_use";
 const REASONING_EFFORT_CAPABILITY = "reasoning_effort";
 const REASONING_CATEGORY = "reasoning";
 const IMAGE_INPUT_MODALITY = "image";
+const IMAGE_INPUT_CAPABILITY = "image_input";
+const VISION_CATEGORY = "vision";
 
 // FlexAI validates `reasoning_effort` per route rather than uniformly. Measured
 // 2026-10-02: the gpt-oss routes reject everything outside low/medium/high;
@@ -34,6 +36,14 @@ function readStringList(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === "string")
     : [];
+}
+
+function isVisionTextRow(record: Record<string, unknown>, supports: string[]): boolean {
+  return (
+    supports.includes(IMAGE_INPUT_CAPABILITY) &&
+    normalizeOptionalString(record.category) === VISION_CATEGORY &&
+    readStringList(record.output_modalities).join() === "text"
+  );
 }
 
 export function buildFlexAICatalogModels(): ModelDefinitionConfig[] {
@@ -57,12 +67,15 @@ function projectFlexAIModels(
       id.length > 512 ||
       /[\s\p{Cc}]/u.test(id) ||
       (record.object !== undefined && record.object !== "model") ||
-      // Text inference only. Embedding, speech, transcription, OCR and
+      // Text inference only. Embedding, speech, transcription and
       // image-generation rows share this endpoint and are not selectable as
-      // chat models. `chat` is the only `supports` entry used as a filter:
-      // the array is incomplete for other capabilities, so a row that streams
-      // can still omit `streaming`.
-      !supports.includes(CHAT_CAPABILITY) ||
+      // chat models; they are served through the plugin's media providers.
+      // `chat` is the filter: the `supports` array is incomplete for other
+      // capabilities, so a row that streams can still omit `streaming`. The
+      // one exception is a vision row that takes image input and answers in
+      // text without declaring `chat` (PaddleOCR-VL): it serves
+      // /chat/completions with image parts, which a live probe confirmed.
+      !(supports.includes(CHAT_CAPABILITY) || isVisionTextRow(record, supports)) ||
       !contextWindow
     ) {
       continue;
