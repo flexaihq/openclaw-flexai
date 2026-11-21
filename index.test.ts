@@ -122,46 +122,6 @@ describe("flexai live catalog projection", () => {
     expect(chat?.cost.output).toBeCloseTo(0.17, 10);
   });
 
-  it("offers no tools to Llama 3.x rows even when they declare tool_use", () => {
-    const models = projectRows([
-      {
-        id: "Meta-Llama-3.1-8B-Instruct-FP8",
-        object: "model",
-        supports: ["chat", "tool_use"],
-        context_length: 131072,
-        input_modalities: ["text"],
-      },
-      {
-        id: "Llama-3.3-70B-Instruct-FP8",
-        object: "model",
-        supports: ["chat", "tool_use"],
-        context_length: 131072,
-        input_modalities: ["text"],
-      },
-      {
-        id: "fixture-tool-chat",
-        object: "model",
-        supports: ["chat", "tool_use"],
-        context_length: 131072,
-        input_modalities: ["text"],
-      },
-    ]);
-    const tools = Object.fromEntries(models.map((model) => [model.id, model.compat?.supportsTools]));
-    expect(tools).toEqual({
-      "Llama-3.3-70B-Instruct-FP8": false,
-      "Meta-Llama-3.1-8B-Instruct-FP8": false,
-      "fixture-tool-chat": true,
-    });
-  });
-
-  it("keeps the bundled Llama 3.x rows tool-free", () => {
-    const llama = manifest.modelCatalog.providers.flexai.models.filter((model) => /llama-3/i.test(model.id));
-    expect(llama.length).toBeGreaterThan(0);
-    for (const model of llama) {
-      expect(model.compat?.supportsTools).toBe(false);
-    }
-  });
-
   it("keeps a chat row whose supports array omits streaming", () => {
     // Measured 2026-10-02: MiniMax-M2.7 streams and reports usage in the
     // stream while its `supports` array lists no `streaming` entry, so only

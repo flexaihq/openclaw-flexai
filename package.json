@@ -1,6 +1,6 @@
 {
   "name": "@flexai/openclaw-provider",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "FlexAI model provider for OpenClaw: open-weight chat and vision models with live discovery, plus image generation, speech, transcription, image understanding, embeddings and video generation.",
   "license": "MIT",
   "repository": {

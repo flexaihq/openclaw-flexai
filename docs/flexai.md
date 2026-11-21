@@ -116,14 +116,6 @@ and image-input flags come from the FlexAI `GET /v1/models` listing. Prices are
 USD per million tokens; the listing is the source of truth and live discovery
 refreshes them.
 
-The Llama 3.x rows are offered no tools, even though FlexAI lists them with tool
-support. With tools available they call one on turns that need none, so the
-plugin serves them as plain chat models. Pick another row for agent work.
-`Meta-Llama-3.1-8B-Instruct-FP8` is also too small for OpenClaw's agent prompt:
-measured 2026-11-20 on staging, 4 of 5 plain turns answered with text from the
-system prompt instead of the reply asked for. Use it through the API directly, not
-as an OpenClaw agent model.
-
 | Model ref | Context | Reasoning | Image input | Price in / out (USD per 1M tokens) | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `flexai/DeepSeek-V4-Flash-0731` | 1M | yes | no | $0.13 / $0.26 | Effort: minimal/low/medium/high/max |
@@ -135,8 +127,8 @@ as an OpenClaw agent model.
 | `flexai/GLM-5.3-Flash` | 1M | yes | yes | $0.088 / $0.25 | Effort: minimal/low/medium/high/max |
 | `flexai/gpt-oss-120b` | 128K | yes | no | $0.03 / $0.15 | Effort: low/medium/high |
 | `flexai/gpt-oss-20b` | 128K | yes | no | $0.018 / $0.09 | Utility default; Effort: low/medium/high |
-| `flexai/Llama-3.3-70B-Instruct-FP8` | 128K | no | no | $0.22 / $0.5 | No tool calling |
-| `flexai/Meta-Llama-3.1-8B-Instruct-FP8` | 128K | no | no | $0.05 / $0.08 | No tool calling; not an agent model, see below |
+| `flexai/Llama-3.3-70B-Instruct-FP8` | 128K | no | no | $0.22 / $0.5 |  |
+| `flexai/Meta-Llama-3.1-8B-Instruct-FP8` | 128K | no | no | $0.05 / $0.08 |  |
 | `flexai/MiMo-V2.6-Flash-RL` | 1M | yes | yes | $0.14 / $0.28 |  |
 | `flexai/MiniMax-M3.1-Flash` | 1M | yes | yes | $0.15 / $0.6 | Effort: low/medium/high |
 | `flexai/Mistral-Nemo-Instruct-2407-FP8` | 128K | no | no | $0.023 / $0.03 |  |
